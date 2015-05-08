@@ -1,6 +1,5 @@
 #-------------------------------------------------------------------------------
 # Name:        Chat Server and Client
-# Purpose:
 #
 # Author:      11vanlint
 #
@@ -168,7 +167,7 @@ class Client(threading.Thread):
 
             if not self.queue.empty():
                 message=self.queue.get()
-                print("Message: "+message+" going out again")
+                #print("Message: "+message+" going out again")
                 self.socket.send(message.encode("ascii"))
             ##insert send message if queue not empty
     def quit(self):
@@ -205,11 +204,11 @@ class Host(threading.Thread):
         if not self.new_message_queue.empty():
 
             message = self.new_message_queue.get()
-            print("Message: "+message+" has reached the upper queue level")
+            #print("Message: "+message+" has reached the upper queue level")
             self.old_messages.append(message)
             self.receiving_queue.put(message)
             for i in self.clients:
-                print("Message has been put in the queue of "+str(i))
+                #print("Message has been put in the queue of "+str(i))
                 i.queue.put(message)
 
         #self.clients[len(clients)-1].receive()
