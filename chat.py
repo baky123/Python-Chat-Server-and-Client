@@ -253,10 +253,13 @@ class FrontPageGui(Frame):
     def check_advanced_options(self):
         #print(self.hcchoice.get())
         if self.hcchoice.get()=="client" and self.s:
+            self.button.destroy()
             self.text2 = Label(self, text="Please enter the host address:")
             self.text2.pack(padx=3, pady=3)
             self.addressentry = Entry(self)
             self.addressentry.pack(padx=3, pady=3)
+            self.button=Button(self, text="Start!", command=self.setup)
+            self.button.pack()
             self.s = False
         elif self.hcchoice.get()=="host" and not self.s:
             self.s=True
