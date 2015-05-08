@@ -17,6 +17,7 @@ import socket
 import queue
 import select
 import sys
+import time
 
 class ClientThread(threading.Thread):
     '''
@@ -82,7 +83,6 @@ class SocketGui(Frame):
         self.receiving_queue = receiving_queue
         self.sending_queue = sending_queue
         self.parent = parent
-        self.parent.wm_title("Client")
         self.initGUI()
         self.parent.after(1000,self.receive)
     def initGUI(self):
@@ -94,20 +94,22 @@ class SocketGui(Frame):
         self.entry = Entry(self.entry_container, width=30)
         self.entry.pack(side=LEFT)
         self.entry.bind("<Return>", lambda x: self.send()) #ADD SENDING FUNC
-        self.send_button = Button(self.entry_container, text="Send", command= self.send)
+        self.send_button = Button(self.entry_container, text="Send", command=self.send)
         self.send_button.pack(side=RIGHT)
 
-        self.text = Text(self.main_message_container, width=30)
+        self.text = Text(self.main_message_container, width=40, wrap="word")
         self.text.pack(side=LEFT)
         self.scroll = Scrollbar(self.main_message_container, command=self.text.yview)
         self.scroll.pack(side=RIGHT, fill=Y)
         self.text.config(yscrollcommand=self.scroll.set)
         self.text.insert(END, "Hello\n")
         self.text.config(state="disabled")
+
     def send(self):
         message=self.entry.get()
         self.entry.delete(0,END)
         self.sending_queue.put(message)
+
     def receive(self):
         if not self.receiving_queue.empty():
             message=self.receiving_queue.get()
@@ -221,6 +223,8 @@ class Host(threading.Thread):
                 message=self.sending_queue.get()
                 self.new_message_queue.put(str(self.identifier+": "+message))
     def quit(self):
+        for i in self.clients:
+            i.quit()
         self.running = False
         self.socket.close()
 
@@ -273,11 +277,15 @@ class FrontPageGui(Frame):
             self.client=ClientThread(self.addressentry.get(), self.idententry.get())
             self.client.start()
             gui=SocketGui(self.window, self.client.received_message_queue, self.client.sending_message_queue)
+            self.window.protocol("WM_DELETE_WINDOW", self.client.quit())
+            self.window.wm_title("Client")
         elif self.hcchoice.get()=="host":
             #print("here")
             self.host=Host(self.idententry.get())
             self.host.start()
             gui=SocketGui(self.window, self.host.receiving_queue, self.host.sending_queue)
+            self.window.protocol("WM_DELETE_WINDOW", self.host.quit())
+            self.window.wm_title("Host")
 
 
 root = Tk()
@@ -286,7 +294,3 @@ gui = FrontPageGui(root)
 
 
 root.mainloop()
-try:
-    gui.client.quit()
-except:
-    pass
