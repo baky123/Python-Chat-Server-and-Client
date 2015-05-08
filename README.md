@@ -12,7 +12,7 @@ Notes:
 
 Does have some bugs
 
-Instructions
+Instructions  
 1. Start it running  
 2. Enter a nickname to be known by  
 3. If you are hosting, press the "Host" button,   
