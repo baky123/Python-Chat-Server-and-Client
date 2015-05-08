@@ -13,8 +13,8 @@ Notes:
 Does have some bugs
 
 Instructions
-1. Start it running
-2. Enter a nickname to be known by
-3. If you are hosting, press the "Host" button, 
-4. If you are clienting (is that a verb?) press the client button and then enter the address of the host
-5. Click "Start!"
+1. Start it running  
+2. Enter a nickname to be known by  
+3. If you are hosting, press the "Host" button,   
+4. If you are clienting (is that a verb?) press the client button and then enter the address of the host  
+5. Click "Start!"  
