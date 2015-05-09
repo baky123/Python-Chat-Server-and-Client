@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        Chat Server and Client
 #
 # Author:      11vanlint
@@ -7,7 +7,8 @@
 # Created:     08/05/2015
 # Copyright:   (c) 11vanlint 2015
 # Licence:     <your licence>
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 #!/usr/bin/env python
 
 from tkinter import *
@@ -17,52 +18,55 @@ import socket
 import queue
 import select
 import sys
-import time
+
 
 class ClientThread(threading.Thread):
-    '''
+    """
     received_message_queue contains messages from host
     sending_message_queue is the queue for outgoing messages
-    '''
+    """
+
     def __init__(self, host_name, identifier, port=9999):
         threading.Thread.__init__(self)
-        self.daemon=True
-        self.identifier=identifier
-        self.host=host_name
-        self.port=port
+        self.daemon = True
+        self.identifier = identifier
+        self.host = host_name
+        self.port = port
         self.running = True
-        self.socket=socket.socket()
+        self.socket = socket.socket()
 
-        self.received_message_queue=queue.Queue(maxsize=0)
-        self.sending_message_queue=queue.Queue(maxsize=0)
-        self.message_archive=[]
+        self.received_message_queue = queue.Queue(maxsize=0)
+        self.sending_message_queue = queue.Queue(maxsize=0)
+        self.message_archive = []
 
 
     def connect(self):
         try:
-            self.socket.connect((self.host,int(self.port)))
+            self.socket.connect((self.host, int(self.port)))
             print("Connected")
         except:
-            print("Error connecting:"+str(sys.exc_info()[0]))
-        request=self.socket.recv(4096).decode("ascii")
+            print("Error connecting:" + str(sys.exc_info()[0]))
+        request = self.socket.recv(4096).decode("ascii")
         print("Request received")
-        if request=="send identifier":
+        if request == "send identifier":
             print("Sending identifier")
             self.socket.send(self.identifier.encode("ascii"))
-        else: raise ValueError("Expected initial identifier request, instead received %s" % request)
+        else:
+            raise ValueError("Expected initial identifier request, instead received %s" % request)
+
     def get_messages(self):
-        sock, x, x = select.select([self.socket],[],[],0)
-        if sock!=[]:
+        sock, x, x = select.select([self.socket], [], [], 0)
+        if sock != []:
             message = self.socket.recv(4096).decode("ascii")
-            print("Received:"+message)
+            print("Received:" + message)
             self.message_archive.append(message)
             self.received_message_queue.put(message)
 
     def read_and_send_messages(self):
         #read from queue and send
         if not self.sending_message_queue.empty():
-            message=self.sending_message_queue.get()
-            print("Sending:"+str(message))
+            message = self.sending_message_queue.get()
+            print("Sending:" + str(message))
             self.socket.send(message.encode("ascii"))
 
     def run(self):
@@ -70,31 +74,33 @@ class ClientThread(threading.Thread):
         while self.running:
             self.read_and_send_messages()
             self.get_messages()
+
     def quit(self):
-        self.running=False
+        self.running = False
         self.socket.send("//discon".encode("ascii"))
         self.socket.close()
 
-class SocketGui(Frame):
-    def __init__(self,parent, receiving_queue, sending_queue):
 
+class SocketGui(Frame):
+    def __init__(self, parent, receiving_queue, sending_queue):
         Frame.__init__(self, parent)
         self.pack()
         self.receiving_queue = receiving_queue
         self.sending_queue = sending_queue
         self.parent = parent
         self.initGUI()
-        self.parent.after(1000,self.receive)
+        self.parent.after(1000, self.receive)
+
     def initGUI(self):
         self.main_message_container = Frame(self)
-        self.main_message_container.pack(padx=5,pady=5)
+        self.main_message_container.pack(padx=5, pady=5)
         self.entry_container = Frame(self)
-        self.entry_container.pack(side=RIGHT,padx=5,pady=5)
+        self.entry_container.pack(side=RIGHT, padx=5, pady=5)
 
         self.entry = Entry(self.entry_container, width=30)
         self.entry.pack(side=LEFT)
-        self.entry.bind("<Return>", lambda x: self.send()) #ADD SENDING FUNC
-        self.send_button = Button(self.entry_container, text="Send", command=self.send)
+        self.entry.bind("<Return>", lambda x: self.send_message())  #ADD SENDING FUNC
+        self.send_button = Button(self.entry_container, text="Send", command=self.send_message)
         self.send_button.pack(side=RIGHT)
 
         self.text = Text(self.main_message_container, width=40, wrap="word")
@@ -105,23 +111,24 @@ class SocketGui(Frame):
         self.text.insert(END, "Hello\n")
         self.text.config(state="disabled")
 
-    def send(self):
-        message=self.entry.get()
-        self.entry.delete(0,END)
+    def send_message(self):
+        message = self.entry.get()
+        #print(message+" is in the send function")
+        self.entry.delete(0, END)
         self.sending_queue.put(message)
 
     def receive(self):
         if not self.receiving_queue.empty():
-            message=self.receiving_queue.get()
+            message = self.receiving_queue.get()
+            #print(message+" is in the receive function")
             self.add(message)
-        self.parent.after(1000,lambda: self.receive())
+        self.parent.after(100, lambda: self.receive())
         #print("hi")
 
 
     def add(self, message):
-
         self.text.config(state="normal")
-        self.text.insert(END,str(message)+"\n")
+        self.text.insert(END, str(message) + "\n")
 
         self.text.config(state="disabled")
 
@@ -131,26 +138,28 @@ class Client(threading.Thread):
 
         threading.Thread.__init__(self)
         self.daemon = True
-        self.socket, self.address= socket_address
+        self.socket, self.address = socket_address
         print(self.address)
-        print("Connected to "+str(self.address))
-        self.socket.send("send identifier".encode("ascii"))
+        print("Connected to " + str(self.address))
+        self.socket.send_message("send identifier".encode("ascii"))
         self.identifier = self.socket.recv(1024).decode("ascii")
-        print("Received identifier: "+self.identifier)
-        self.main_message_queue=message_queue
+        print("Received identifier: " + self.identifier)
+        self.main_message_queue = message_queue
         self.queue = queue.Queue(maxsize=0)
         self.running = True
         self.main_message_queue.put("{} has connected".format(self.identifier))
+
     def __repr__(self):
         return "Client_thread with ident: {} at {}".format(self.identifier, self.address)
+
     def receive(self):
-        (active_socket, x, x) = select.select([self.socket], [], [],0)
+        (active_socket, x, x) = select.select([self.socket], [], [], 0)
         if active_socket != []:
             message = self.socket.recv(4096).decode("ascii")
-            print("received:"+str(message))
-            if message=="//discon":
+            print("received:" + str(message))
+            if message == "//discon":
                 self.main_message_queue.put("{} has disconnected".format(self.identifier))
-                message=None
+                message = None
                 self.quit()
             #insert special commands here
             else:
@@ -158,6 +167,7 @@ class Client(threading.Thread):
             return message
         else:
             return None
+
     def run(self):
 
         while self.running:
@@ -166,20 +176,18 @@ class Client(threading.Thread):
             if data != None:
                 self.main_message_queue.put(data)
 
-
             if not self.queue.empty():
-                message=self.queue.get()
+                message = self.queue.get()
                 #print("Message: "+message+" going out again")
-                self.socket.send(message.encode("ascii"))
-            ##insert send message if queue not empty
+                self.socket.send_message(message.encode("ascii"))
+                ##insert send message if queue not empty
+
     def quit(self):
         self.running = False
         self.socket.close()
 
-class Host(threading.Thread):
-    '''
 
-    '''
+class Host(threading.Thread):
     def __init__(self, ident, port=9999, host=socket.gethostname()):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -195,14 +203,16 @@ class Host(threading.Thread):
         self.all_sockets = []
         self.old_messages = []
         self.running = True
-        self.sending_queue=queue.Queue(maxsize=0)
-        self.receiving_queue=queue.Queue(maxsize=0)
+        self.sending_queue = queue.Queue(maxsize=0)
+        self.receiving_queue = queue.Queue(maxsize=0)
+
     def check_messages_and_acceptance(self):
-        (ready, x, x) = select.select([self.socket], [], [],0)
+        #print(self.socket)
+        (ready, x, x) = select.select([self.socket], [], [], 0)
 
         if ready != []:
             self.clients.append(Client(self.new_message_queue, self.socket.accept()))
-            self.clients[len(self.clients)-1].start()
+            self.clients[len(self.clients) - 1].start()
         if not self.new_message_queue.empty():
 
             message = self.new_message_queue.get()
@@ -213,16 +223,22 @@ class Host(threading.Thread):
                 #print("Message has been put in the queue of "+str(i))
                 i.queue.put(message)
 
-        #self.clients[len(clients)-1].receive()
+                #self.clients[len(clients)-1].receive()
+
     #def resend(self):
 
     def run(self):
         while self.running:
+            #print("running")
             self.check_messages_and_acceptance()
             if not self.sending_queue.empty():
-                message=self.sending_queue.get()
-                self.new_message_queue.put(str(self.identifier+": "+message))
+                #print("it ain't empty")
+                message = self.sending_queue.get()
+                #print("Got "+message)
+                self.new_message_queue.put(str(self.identifier + ": " + message))
+
     def quit(self):
+        #print("quit")
         for i in self.clients:
             i.quit()
         self.running = False
@@ -230,7 +246,6 @@ class Host(threading.Thread):
 
 
 class FrontPageGui(Frame):
-
     def __init__(self, parent):
         self.parent = parent
         Frame.__init__(self, self.parent)
@@ -239,6 +254,7 @@ class FrontPageGui(Frame):
         self.parent.after(100, self.check_advanced_options)
         self.pack()
         #self.bind("<Return>", lambda x: self.setup())
+
     def initGui(self):
         self.text1 = Label(self, text="Please enter a nickname:")
         self.text1.pack(padx=3, pady=3)
@@ -247,50 +263,55 @@ class FrontPageGui(Frame):
         self.hcchoice = StringVar()
         self.choiceframe = Frame(self)
         self.choiceframe.pack()
-        self.hostbutton = Radiobutton(self.choiceframe, text="Host", variable = self.hcchoice, value = "host")
-        self.clientbutton = Radiobutton(self.choiceframe, text="Client", variable = self.hcchoice, value = "client")
+        self.hostbutton = Radiobutton(self.choiceframe, text="Host", variable=self.hcchoice, value="host")
+        self.clientbutton = Radiobutton(self.choiceframe, text="Client", variable=self.hcchoice, value="client")
         self.hostbutton.pack(side=LEFT)
         self.clientbutton.pack(side=RIGHT)
         self.hostbutton.select()
-        self.button=Button(self, text="Start!", command=self.setup)
+        self.button = Button(self, text="Start!", command=self.setup)
         self.button.pack()
+
     def check_advanced_options(self):
         #print(self.hcchoice.get())
-        if self.hcchoice.get()=="client" and self.s:
+        if self.hcchoice.get() == "client" and self.s:
             self.button.destroy()
             self.text2 = Label(self, text="Please enter the host address:")
             self.text2.pack(padx=3, pady=3)
             self.addressentry = Entry(self)
             self.addressentry.pack(padx=3, pady=3)
-            self.button=Button(self, text="Start!", command=self.setup)
+            self.button = Button(self, text="Start!", command=self.setup)
             self.button.pack()
             self.s = False
-        elif self.hcchoice.get()=="host" and not self.s:
-            self.s=True
+        elif self.hcchoice.get() == "host" and not self.s:
+            self.s = True
             self.text2.destroy()
             self.addressentry.destroy()
         self.parent.after(100, self.check_advanced_options)
+
     def setup(self):
         #print("there")
-        self.window=Toplevel()
-        if self.hcchoice.get()=="client":
-            self.client=ClientThread(self.addressentry.get(), self.idententry.get())
+        self.window = Toplevel()
+        if self.hcchoice.get() == "client":
+            self.client = ClientThread(self.addressentry.get(), self.idententry.get())
             self.client.start()
-            gui=SocketGui(self.window, self.client.received_message_queue, self.client.sending_message_queue)
-            self.window.protocol("WM_DELETE_WINDOW", self.client.quit())
+            gui = SocketGui(self.window, self.client.received_message_queue, self.client.sending_message_queue)
+            self.window.protocol("WM_DELETE_WINDOW", self.client.quit)
             self.window.wm_title("Client")
-        elif self.hcchoice.get()=="host":
+        elif self.hcchoice.get() == "host":
             #print("here")
-            self.host=Host(self.idententry.get())
+            self.host = Host(self.idententry.get())
             self.host.start()
-            gui=SocketGui(self.window, self.host.receiving_queue, self.host.sending_queue)
-            self.window.protocol("WM_DELETE_WINDOW", self.host.quit())
+            gui = SocketGui(self.window, self.host.receiving_queue, self.host.sending_queue)
+            #gui=SocketGui(self.window, self.host.sending_queue, self.host.receiving_queue)
+            self.host.sending_queue.put("Hello")
+            self.host.receiving_queue.put("Re")
+            self.window.protocol("WM_DELETE_WINDOW", self.host.quit)
+
             self.window.wm_title("Host")
 
 
 root = Tk()
 
 gui = FrontPageGui(root)
-
 
 root.mainloop()
