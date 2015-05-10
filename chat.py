@@ -3,13 +3,13 @@
 #
 # Author:      11vanlint
 #
-# Version:     1.0
+# Version:     1.1
 # Created:     08/05/2015
 # Copyright:   (c) 11vanlint 2015
 # Licence:     <your licence>
 # -------------------------------------------------------------------------------
 
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 from tkinter import *
 
@@ -30,6 +30,10 @@ class ClientThread(threading.Thread):
         threading.Thread.__init__(self)
         self.daemon = True
         self.identifier = identifier
+        try:
+            self.identifier.encode("ascii")
+        except:
+            self.identifier = "This idiot didn't use acsii"
         self.host = host_name
         self.port = port
         self.running = True
@@ -38,7 +42,6 @@ class ClientThread(threading.Thread):
         self.received_message_queue = queue.Queue(maxsize=0)
         self.sending_message_queue = queue.Queue(maxsize=0)
         self.message_archive = []
-
 
     def connect(self):
         try:
@@ -125,7 +128,6 @@ class SocketGui(Frame):
         self.parent.after(100, lambda: self.receive())
         #print("hi")
 
-
     def add(self, message):
         self.text.config(state="normal")
         self.text.insert(END, str(message) + "\n")
@@ -194,6 +196,10 @@ class Host(threading.Thread):
         self.port = port
         self.host = host
         self.identifier = ident
+        try:
+            self.identifier.encode("ascii")
+        except:
+            self.identifier = "This idiot didn't use acsii"
         self.socket = socket.socket()
         self.socket.bind((self.host, self.port))
         self.socket.listen(5)
@@ -253,6 +259,7 @@ class FrontPageGui(Frame):
         self.s = True
         self.parent.after(100, self.check_advanced_options)
         self.pack()
+        self.port = 9999
         #self.bind("<Return>", lambda x: self.setup())
 
     def initGui(self):
@@ -268,19 +275,22 @@ class FrontPageGui(Frame):
         self.hostbutton.pack(side=LEFT)
         self.clientbutton.pack(side=RIGHT)
         self.hostbutton.select()
-        self.button = Button(self, text="Start!", command=self.setup)
-        self.button.pack()
+        self.buttonframe = Frame(self)
+        self.buttonframe.pack()
+        self.startbutton = Button(self.buttonframe, text="Start!", command=self.setup)
+        self.startbutton.pack(side=RIGHT, padx=3, pady=2)
+        self.settingsbutton = Button(self.buttonframe, text="Settings", command=self.settings)
+        self.settingsbutton.pack(side=LEFT, padx=3, pady=2)
 
     def check_advanced_options(self):
         #print(self.hcchoice.get())
         if self.hcchoice.get() == "client" and self.s:
-            self.button.destroy()
+            self.buttonframe.pack_forget()
             self.text2 = Label(self, text="Please enter the host address:")
             self.text2.pack(padx=3, pady=3)
             self.addressentry = Entry(self)
             self.addressentry.pack(padx=3, pady=3)
-            self.button = Button(self, text="Start!", command=self.setup)
-            self.button.pack()
+            self.buttonframe.pack()
             self.s = False
         elif self.hcchoice.get() == "host" and not self.s:
             self.s = True
@@ -288,26 +298,55 @@ class FrontPageGui(Frame):
             self.addressentry.destroy()
         self.parent.after(100, self.check_advanced_options)
 
+    def settings(self):
+        self.set = SettingsWindow(self)
+
     def setup(self):
         #print("there")
         self.window = Toplevel()
         if self.hcchoice.get() == "client":
-            self.client = ClientThread(self.addressentry.get(), self.idententry.get())
+            self.client = ClientThread(self.addressentry.get(), self.idententry.get(), port=self.port)
             self.client.start()
             gui = SocketGui(self.window, self.client.received_message_queue, self.client.sending_message_queue)
             self.window.protocol("WM_DELETE_WINDOW", self.client.quit)
+            self.window.protocol("WM_DELETE_WINDOW", self.window.destroy)
             self.window.wm_title("Client")
         elif self.hcchoice.get() == "host":
             #print("here")
-            self.host = Host(self.idententry.get())
+            self.host = Host(self.idententry.get(), port=self.port)
             self.host.start()
             gui = SocketGui(self.window, self.host.receiving_queue, self.host.sending_queue)
             #gui=SocketGui(self.window, self.host.sending_queue, self.host.receiving_queue)
-            self.host.sending_queue.put("Hello")
-            self.host.receiving_queue.put("Re")
+            #self.host.sending_queue.put("Hello")
+            #self.host.receiving_queue.put("Re")
             self.window.protocol("WM_DELETE_WINDOW", self.host.quit)
-
+            self.window.protocol("WM_DELETE_WINDOW", self.window.destroy)
             self.window.wm_title("Host")
+
+
+class SettingsWindow(Toplevel):
+    def __init__(self, parent):
+        self.parent = parent
+        Toplevel.__init__(self, self.parent)
+        self.initGUI()
+        self.protocol("WM_DELETE_WINDOW", self.setportvar)
+
+    def initGUI(self):
+        self.wm_title("Advanced Settings")
+        self.portlabel = Label(self, text="Port:")
+        self.portlabel.pack(padx=3, pady=3)
+        self.portentry = Entry(self)
+        self.portentry.pack(pady=2, padx=2)
+        self.portentry.insert(0, str(self.parent.port))
+
+    def setportvar(self):
+        port = self.portentry.get()
+        try:
+            self.parent.port = int(port)
+        except ValueError:
+            print("Woops, port has to be an integer")
+        print(self.parent.port)
+        self.destroy()
 
 
 root = Tk()
