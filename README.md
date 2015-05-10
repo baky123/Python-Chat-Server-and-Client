@@ -9,7 +9,8 @@ May need to do port forwarding
 
 
 Notes:
-
+All characters must be ascii, otherwise they will not send
+Same with your nickname
 Does have some bugs
 
 Instructions  
