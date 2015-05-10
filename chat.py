@@ -18,7 +18,7 @@ import socket
 import queue
 import select
 import sys
-
+import time
 
 class ClientThread(threading.Thread):
     """
@@ -169,7 +169,7 @@ class Client(threading.Thread):
                 self.quit()
             # insert special commands here
             else:
-                message = self.identifier + ": " + message
+                message = self.identifier + time.strftime("(%H:%M)")+": " + message
             return message
         else:
             return None
@@ -246,7 +246,7 @@ class Host(threading.Thread):
                 message = self.sending_queue.get()
                 try:
                     message.encode("ascii")
-                    self.new_message_queue.put(str(self.identifier + ": " + message))
+                    self.new_message_queue.put(str(self.identifier +time.strftime("(%H:%M)")+ ": " + message))
                 except ValueError:
                     pass
 
@@ -314,18 +314,19 @@ class FrontPageGui(Frame):
     def setup(self):
         # print("there")
         self.window = Toplevel()
+        self.window.resizable(0,0)
         if self.hcchoice.get() == "client":
-            self.client = ClientThread(self.addressentry.get(), self.idententry.get(), port=self.port)
+            self.client = ClientThread(self.addressentry.get(), decolonify(self.idententry.get()), port=self.port)
             self.client.start()
-            gui = SocketGui(self.window, self.client.received_message_queue, self.client.sending_message_queue)
+            self.gui = SocketGui(self.window, self.client.received_message_queue, self.client.sending_message_queue)
             self.window.protocol("WM_DELETE_WINDOW", self.client.quit)
             self.window.protocol("WM_DELETE_WINDOW", self.window.destroy)
             self.window.wm_title("Client")
         elif self.hcchoice.get() == "host":
             # print("here")
-            self.host = Host(self.idententry.get(), port=self.port)
+            self.host = Host(decolonify(self.idententry.get()), port=self.port)
             self.host.start()
-            gui = SocketGui(self.window, self.host.receiving_queue, self.host.sending_queue)
+            self.gui = SocketGui(self.window, self.host.receiving_queue, self.host.sending_queue)
             # gui=SocketGui(self.window, self.host.sending_queue, self.host.receiving_queue)
             #self.host.sending_queue.put("Hello")
             #self.host.receiving_queue.put("Re")
@@ -336,9 +337,11 @@ class FrontPageGui(Frame):
 
 class SettingsWindow(Toplevel):
     def __init__(self, parent):
+
         self.parent = parent
         Toplevel.__init__(self, self.parent)
         self.initGUI()
+        self.resizable(0,0)
         self.protocol("WM_DELETE_WINDOW", self.setportvar)
 
     def initGUI(self):
@@ -358,9 +361,11 @@ class SettingsWindow(Toplevel):
         print(self.parent.port)
         self.destroy()
 
-
+def decolonify(message):
+    nm = "".join(i for i in message if i != ":")
+    return nm
 root = Tk()
-
+root.resizable(0,0)
 gui = FrontPageGui(root)
 
 root.mainloop()
