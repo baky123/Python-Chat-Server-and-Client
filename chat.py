@@ -110,7 +110,7 @@ class SocketGui(Frame):
         self.send_button = Button(self.entry_container, text="Send", command=self.send_message)
         self.send_button.pack(side=RIGHT)
 
-        self.text = Text(self.main_message_container, width=40, wrap="word")
+        self.text = Text(self.main_message_container, width=50, wrap="word")
         self.text.pack(side=LEFT)
         self.scroll = Scrollbar(self.main_message_container, command=self.text.yview)
         self.scroll.pack(side=RIGHT, fill=Y)
@@ -169,7 +169,7 @@ class Client(threading.Thread):
                 self.quit()
             # insert special commands here
             else:
-                message = self.identifier + time.strftime("(%H:%M)")+": " + message
+                message = time.strftime("(%H:%M) ") + self.identifier + ": " + message
             return message
         else:
             return None
@@ -246,7 +246,7 @@ class Host(threading.Thread):
                 message = self.sending_queue.get()
                 try:
                     message.encode("ascii")
-                    self.new_message_queue.put(str(self.identifier +time.strftime("(%H:%M)")+ ": " + message))
+                    self.new_message_queue.put(str(time.strftime("(%H:%M) ") + self.identifier + ": " + message))
                 except ValueError:
                     pass
 
