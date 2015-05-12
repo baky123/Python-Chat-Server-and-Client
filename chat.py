@@ -358,7 +358,7 @@ class SettingsWindow(Toplevel):
             self.parent.port = int(port)
         except ValueError:
             print("Woops, port has to be an integer")
-        print(self.parent.port)
+        #print(self.parent.port)
         self.destroy()
 
 def decolonify(message):
