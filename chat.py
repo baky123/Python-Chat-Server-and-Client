@@ -34,6 +34,7 @@ class ClientThread(threading.Thread):
             self.identifier.encode("ascii")
         except:
             self.identifier = "This idiot didn't use acsii"
+            print("USE ASCII!!!!!!!")
         self.host = host_name
         self.port = port
         self.running = True
@@ -147,7 +148,7 @@ class Client(threading.Thread):
         self.socket, self.address = socket_address
         print(self.address)
         print("Connected to " + str(self.address))
-        self.socket.send_message("send identifier".encode("ascii"))
+        self.socket.send_message('send identifier'.encode("ascii"))
         self.identifier = self.socket.recv(1024).decode("ascii")
         print("Received identifier: " + self.identifier)
         self.main_message_queue = message_queue
