@@ -56,7 +56,7 @@ class ClientThread(threading.Thread):
             print("Sending identifier")
             self.socket.send(self.identifier.encode("ascii"))
         else:
-            raise ValueError("Expected initial identifier request, instead received %s" % request)
+            raise ValueError("Expected initial identifier request, instead received (%s)" % request)
 
     def get_messages(self):
         sock, x, x = select.select([self.socket], [], [], 0)
@@ -148,7 +148,7 @@ class Client(threading.Thread):
         self.socket, self.address = socket_address
         print(self.address)
         print("Connected to " + str(self.address))
-        self.socket.send_message('send identifier'.encode("ascii"))
+        self.socket.send('send identifier'.encode("ascii"))
         self.identifier = self.socket.recv(1024).decode("ascii")
         print("Received identifier: " + self.identifier)
         self.main_message_queue = message_queue
@@ -186,7 +186,7 @@ class Client(threading.Thread):
             if not self.queue.empty():
                 message = self.queue.get()
                 # print("Message: "+message+" going out again")
-                self.socket.send_message(message.encode("ascii"))
+                self.socket.send(message.encode("ascii"))
                 ##insert send message if queue not empty
 
     def quit(self):
