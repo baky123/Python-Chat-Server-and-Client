@@ -1,5 +1,5 @@
 # Python-Chat-Server-and-Client
-
+#NOTE: Currently not working, attempting to find a fix
 
 Start it up, host a server or connect to a client
 
