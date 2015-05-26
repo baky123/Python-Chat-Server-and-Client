@@ -20,6 +20,7 @@ import select
 import sys
 import time
 
+
 class ClientThread(threading.Thread):
     """
     received_message_queue contains messages from host
@@ -234,7 +235,7 @@ class Host(threading.Thread):
                 # print("Message has been put in the queue of "+str(i))
                 i.queue.put(message)
 
-                #self.clients[len(clients)-1].receive()
+                # self.clients[len(clients)-1].receive()
 
     # def resend(self):
 
@@ -251,8 +252,7 @@ class Host(threading.Thread):
                 except ValueError:
                     pass
 
-                    #print("Got "+message)
-
+#                    print("Got "+message)
 
     def quit(self):
         # print("quit")
@@ -315,9 +315,9 @@ class FrontPageGui(Frame):
     def setup(self):
         # print("there")
         self.window = Toplevel()
-        self.window.resizable(0,0)
+        self.window.resizable(0, 0)
         if self.hcchoice.get() == "client":
-            self.client = ClientThread(self.addressentry.get(), decolonify(self.idententry.get()), port=self.port)
+            self.client = ClientThread(self.addressentry.get(), delete_forbidden_characters(self.idententry.get()), port=self.port)
             self.client.start()
             self.gui = SocketGui(self.window, self.client.received_message_queue, self.client.sending_message_queue)
             self.window.protocol("WM_DELETE_WINDOW", self.client.quit)
@@ -325,12 +325,12 @@ class FrontPageGui(Frame):
             self.window.wm_title("Client")
         elif self.hcchoice.get() == "host":
             # print("here")
-            self.host = Host(decolonify(self.idententry.get()), port=self.port)
+            self.host = Host(delete_forbidden_characters(self.idententry.get()), port=self.port)
             self.host.start()
             self.gui = SocketGui(self.window, self.host.receiving_queue, self.host.sending_queue)
             # gui=SocketGui(self.window, self.host.sending_queue, self.host.receiving_queue)
-            #self.host.sending_queue.put("Hello")
-            #self.host.receiving_queue.put("Re")
+            # self.host.sending_queue.put("Hello")
+            # self.host.receiving_queue.put("Re")
             self.window.protocol("WM_DELETE_WINDOW", self.host.quit)
             self.window.protocol("WM_DELETE_WINDOW", self.window.destroy)
             self.window.wm_title("Host")
@@ -342,7 +342,7 @@ class SettingsWindow(Toplevel):
         self.parent = parent
         Toplevel.__init__(self, self.parent)
         self.initGUI()
-        self.resizable(0,0)
+        self.resizable(0, 0)
         self.protocol("WM_DELETE_WINDOW", self.setportvar)
 
     def initGUI(self):
@@ -359,14 +359,18 @@ class SettingsWindow(Toplevel):
             self.parent.port = int(port)
         except ValueError:
             print("Woops, port has to be an integer")
-        #print(self.parent.port)
+        # print(self.parent.port)
         self.destroy()
 
-def decolonify(message):
-    nm = "".join(i for i in message if i != ":")
+
+def delete_forbidden_characters(message):
+    forbidden_characters = [":"]    #DO NOT EDIT THIS!!! These are set for a reason
+    nm = "".join(i for i in message if i not in forbidden_characters)
     return nm
+
+
 root = Tk()
-root.resizable(0,0)
+root.resizable(0, 0)
 gui = FrontPageGui(root)
 
 root.mainloop()
