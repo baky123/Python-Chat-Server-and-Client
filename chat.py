@@ -171,7 +171,7 @@ class Client(threading.Thread):
                 self.quit()
             # insert special commands here
             else:
-                message = time.strftime("(%H:%M) ") + self.identifier + ": " + message
+                message = self.format_message(self.identifier, message)
             return message
         else:
             return None
@@ -248,12 +248,13 @@ class Host(threading.Thread):
                 message = self.sending_queue.get()
                 try:
                     message.encode("ascii")
-                    self.new_message_queue.put(str(time.strftime("(%H:%M) ") + self.identifier + ": " + message))
+                    self.new_message_queue.put(self.format_message(self.identifier,message))
                 except ValueError:
                     pass
 
 #                    print("Got "+message)
-
+    def format_message(self, ident, message):
+        return "{0} <t>{1}</t>: {2}".format(time.strftime("(%H:%M)"), ident, message)
     def quit(self):
         # print("quit")
         for i in self.clients:
